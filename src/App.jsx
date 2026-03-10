@@ -1,921 +1,608 @@
-import { useState, useEffect } from "react";
-import {
-  BarChart, Bar, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-} from "recharts";
+import React, { useState } from 'react';
+import { Bell, Menu, LogOut, Plus, Eye, EyeOff, Search, Calendar, DollarSign, Users, TrendingUp, Bot, Send, X, Loader } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-const USERS = [
-  { username:"admin",    password:"admin123", role:"ADMIN",    name:"Super Admin",   id:1 },
-  { username:"hr",       password:"hr123",    role:"HR",       name:"HR Manager",    id:2 },
-  { username:"employee", password:"emp123",   role:"EMPLOYEE", name:"John Employee", id:3 },
+const revenueData = [
+  { month: 'Jan', revenue: 45000 }, { month: 'Feb', revenue: 52000 },
+  { month: 'Mar', revenue: 48000 }, { month: 'Apr', revenue: 61000 },
+  { month: 'May', revenue: 55000 }, { month: 'Jun', revenue: 67000 }
 ];
 
-const INIT_EMPLOYEES = [
-  { id:1, user:{name:"Arun Patel",   email:"arun@co.com",   is_active:true},  department:"Engineering", position:"Developer",       base_salary:85000 },
-  { id:2, user:{name:"Priya Sharma", email:"priya@co.com",  is_active:true},  department:"Design",      position:"UI Designer",     base_salary:72000 },
-  { id:3, user:{name:"Rahul Mehta",  email:"rahul@co.com",  is_active:true},  department:"Sales",       position:"Sales Executive", base_salary:68000 },
-  { id:4, user:{name:"Sneha Rao",    email:"sneha@co.com",  is_active:false}, department:"Marketing",   position:"Marketing Lead",  base_salary:78000 },
-  { id:5, user:{name:"Vikram Singh", email:"vikram@co.com", is_active:true},  department:"Engineering", position:"Sr. Developer",   base_salary:95000 },
+const performanceData = [
+  { name: 'Sales', value: 65 }, { name: 'Marketing', value: 52 },
+  { name: 'Operations', value: 48 }, { name: 'Development', value: 72 }
 ];
 
-const INIT_LEAVES = [
-  { id:1, leave_type:"SICK",   days:2, start_date:"2026-03-10", end_date:"2026-03-11", reason:"Fever",        status:"PENDING"  },
-  { id:2, leave_type:"CASUAL", days:3, start_date:"2026-03-15", end_date:"2026-03-17", reason:"Family event", status:"APPROVED" },
-  { id:3, leave_type:"ANNUAL", days:5, start_date:"2026-03-20", end_date:"2026-03-24", reason:"Vacation",     status:"PENDING"  },
+const employeeListData = [
+  { id: 1, name: 'John Doe', position: 'Senior Developer', department: 'Tech', status: 'Active' },
+  { id: 2, name: 'Sarah Smith', position: 'HR Manager', department: 'HR', status: 'Active' },
+  { id: 3, name: 'Mike Johnson', position: 'Product Manager', department: 'Product', status: 'On Leave' },
+  { id: 4, name: 'Emma Wilson', position: 'Designer', department: 'Design', status: 'Active' },
+  { id: 5, name: 'Alex Brown', position: 'Backend Developer', department: 'Tech', status: 'Active' }
 ];
 
-const INIT_PAYROLL = [
-  { id:1, employee_id:1, month:3, year:2026, base_salary:85000, bonus:5000, deductions:3000, net_salary:87000, status:"PENDING" },
-  { id:2, employee_id:2, month:3, year:2026, base_salary:72000, bonus:3000, deductions:2500, net_salary:72500, status:"PAID"    },
-  { id:3, employee_id:3, month:3, year:2026, base_salary:68000, bonus:2000, deductions:2000, net_salary:68000, status:"PENDING" },
+const leaveRequests = [
+  { id: 1, employee: 'John Doe', type: 'Sick Leave', date: '2026-03-10', status: 'Pending' },
+  { id: 2, employee: 'Sarah Smith', type: 'Vacation', date: '2026-03-15', status: 'Approved' },
+  { id: 3, employee: 'Mike Johnson', type: 'Personal', date: '2026-03-12', status: 'Pending' }
 ];
 
-const MOCK_REVENUE = [
-  { month:1, amount:4500000, expense:2100000, profit:2400000 },
-  { month:2, amount:5200000, expense:2400000, profit:2800000 },
-  { month:3, amount:4800000, expense:2200000, profit:2600000 },
-  { month:4, amount:6100000, expense:2700000, profit:3400000 },
-  { month:5, amount:5500000, expense:2500000, profit:3000000 },
-  { month:6, amount:6700000, expense:2900000, profit:3800000 },
+const notificationsData = [
+  { id: 1, title: 'New leave request', message: 'John Doe requested sick leave', time: '5 min ago' },
+  { id: 2, title: 'Report generated', message: 'Monthly performance report is ready', time: '1 hour ago' },
+  { id: 3, title: 'New employee', message: 'Alex Brown joined the team', time: '3 hours ago' }
 ];
 
-const MOCK_LOGS = [
-  { action:"Employee added",          user:"HR Manager",  created_at:"2026-03-09T10:30:00" },
-  { action:"Leave approved",          user:"HR Manager",  created_at:"2026-03-09T11:00:00" },
-  { action:"Payroll processed",       user:"HR Manager",  created_at:"2026-03-09T12:00:00" },
-  { action:"Revenue entry saved",     user:"Super Admin", created_at:"2026-03-09T13:00:00" },
-  { action:"Email announcement sent", user:"HR Manager",  created_at:"2026-03-09T14:00:00" },
-];
+// ── AI Hook ────────────────────────────────────────────────────────────────────
+function useAI() {
+  const [loading, setLoading] = useState(false);
+  const ask = async (systemPrompt, userMessage) => {
+    setLoading(true);
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userMessage }]
+        })
+      });
+      const data = await res.json();
+      return data.content?.[0]?.text || 'No response.';
+    } catch { return 'Error reaching AI backend.'; }
+    finally { setLoading(false); }
+  };
+  return { ask, loading };
+}
 
-const GLOW   = { ADMIN:"#ff6b35", HR:"#00f5d4", EMPLOYEE:"#a78bfa" };
-const LABEL  = { ADMIN:"Super Admin", HR:"HR Manager", EMPLOYEE:"Employee" };
-const MONTHS = ["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const NAV = {
-  ADMIN:    [["⬡","dashboard","Overview"],["◈","hrmonitor","HR Monitor"],["◎","revenue","Revenue"],["◉","comms","Communications"]],
-  HR:       [["⬡","dashboard","Overview"],["◈","employees","Employees"],["◎","leaves","Leave Mgmt"],["◉","payroll","Payroll"]],
-  EMPLOYEE: [["⬡","dashboard","Overview"],["◎","myleave","My Leaves"],["◉","mypayroll","My Payroll"],["◈","profile","My Profile"]],
+// ── AI Chat Panel ──────────────────────────────────────────────────────────────
+const AIChatPanel = ({ userRole, onClose }) => {
+  const [messages, setMessages] = useState([
+    { role: 'assistant', text: `Hi! I'm your NEXUS AI assistant. Ask me anything about your ${userRole} dashboard — employees, reports, salary, or business insights!` }
+  ]);
+  const [input, setInput] = useState('');
+  const [typing, setTyping] = useState(false);
+  const { ask } = useAI();
+  const bottomRef = React.useRef(null);
+
+  React.useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, typing]);
+
+  const systemPrompt = `You are NEXUS AI, an intelligent business management assistant embedded in a role-based dashboard.
+Current user role: ${userRole}.
+Company data:
+- Total Employees: 145, Revenue: $2.4M, Growth: 23.5%
+- Employees: John Doe (Senior Dev, Tech, Active), Sarah Smith (HR Manager, Active), Mike Johnson (Product Manager, On Leave), Emma Wilson (Designer, Active), Alex Brown (Backend Dev, Active)
+- Leave Requests: John Doe (Sick, Pending), Sarah Smith (Vacation, Approved), Mike Johnson (Personal, Pending)
+- Monthly Revenue: Jan $45k, Feb $52k, Mar $48k, Apr $61k, May $55k, Jun $67k
+- Dept Performance: Sales 65%, Marketing 52%, Operations 48%, Development 72%
+- Salary Pool: $245,000 | Processed: $235,000
+Respond concisely and professionally. Focus on insights relevant to the ${userRole} role.`;
+
+  const send = async () => {
+    if (!input.trim()) return;
+    const msg = input.trim();
+    setInput('');
+    setMessages(m => [...m, { role: 'user', text: msg }]);
+    setTyping(true);
+    const reply = await ask(systemPrompt, msg);
+    setTyping(false);
+    setMessages(m => [...m, { role: 'assistant', text: reply }]);
+  };
+
+  return (
+    <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1000, width: 380, height: 480, display: 'flex', flexDirection: 'column', background: 'rgba(15,23,42,0.95)', backdropFilter: 'blur(16px)', border: '1px solid rgba(0,255,247,0.3)', borderRadius: 20, boxShadow: '0 0 40px rgba(0,255,247,0.15)' }}>
+      <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Bot size={18} color="#00FFF7" />
+          <span style={{ fontWeight: 600, fontSize: 14, color: 'white' }}>NEXUS AI Assistant</span>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00FFF7', display: 'inline-block', animation: 'pulse 1.8s infinite' }} />
+        </div>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}><X size={16} /></button>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {messages.map((m, i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+            <div style={{
+              maxWidth: '80%', padding: '9px 13px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px', fontSize: 13, lineHeight: 1.5,
+              background: m.role === 'user' ? 'linear-gradient(135deg,#00FFF7,#0099cc)' : 'rgba(255,255,255,0.08)',
+              color: m.role === 'user' ? '#0a0a0a' : '#e2e8f0'
+            }}>{m.text}</div>
+          </div>
+        ))}
+        {typing && (
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <div style={{ background: 'rgba(255,255,255,0.08)', padding: '10px 14px', borderRadius: '16px 16px 16px 4px', display: 'flex', gap: 4 }}>
+              {[0,1,2].map(i => <span key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: '#00FFF7', display: 'inline-block', animation: `bounce 1.2s infinite ${i*0.2}s` }} />)}
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      <div style={{ padding: '10px 12px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 8 }}>
+        <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()}
+          placeholder="Ask anything..." style={{ flex: 1, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, padding: '8px 12px', color: 'white', fontSize: 13, outline: 'none' }} />
+        <button onClick={send} style={{ background: 'rgba(0,255,247,0.15)', border: '1px solid rgba(0,255,247,0.3)', borderRadius: 10, padding: '8px 12px', cursor: 'pointer', color: '#00FFF7' }}><Send size={15} /></button>
+      </div>
+    </div>
+  );
 };
 
-const G = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  :root{
-    --bg0:#020812;--bg1:#060f1e;--bg2:#0a1628;
-    --glass:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.09);
-    --text:#e8edf5;--mute:rgba(255,255,255,0.35);
-    --cyan:#00f5d4;--orange:#ff6b35;--purple:#a78bfa;--red:#ff4466;--yellow:#ffd166;
-  }
-  html,body{background:var(--bg0);color:var(--text);font-family:'Space Grotesk',sans-serif;height:100%;overflow:hidden;}
-  ::-webkit-scrollbar{width:3px;}
-  ::-webkit-scrollbar-thumb{background:rgba(0,245,212,0.25);border-radius:99px;}
-  input,textarea,select{font-family:'Space Grotesk',sans-serif;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);outline:none;transition:border 0.2s,box-shadow 0.2s;}
-  input:focus,textarea:focus,select:focus{border-color:rgba(0,245,212,0.4);box-shadow:0 0 0 3px rgba(0,245,212,0.07);}
-  input::placeholder,textarea::placeholder{color:rgba(255,255,255,0.2);}
-  select option{background:#060f1e;}
-  button{font-family:'Space Grotesk',sans-serif;cursor:pointer;border:none;}
-  button:disabled{opacity:0.5;cursor:not-allowed;}
-  @keyframes spin   {to{transform:rotate(360deg);}}
-  @keyframes orb    {0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(30px,-20px) scale(1.08);}}
-  @keyframes fadein {from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
-  @keyframes blink  {0%,100%{opacity:1;}50%{opacity:0.3;}}
-`;
+// ── AI Smart Summary ───────────────────────────────────────────────────────────
+const AISmartSummary = ({ userRole }) => {
+  const [summary, setSummary] = useState('');
+  const { ask, loading } = useAI();
 
-function Card({ children, glow, style, onClick }) {
-  const g = glow||"transparent";
-  return (
-    <div onClick={onClick} style={{
-      background:"var(--glass)",backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)",
-      border:"1px solid var(--border)",borderRadius:18,position:"relative",overflow:"hidden",
-      boxShadow:glow?`0 4px 24px rgba(0,0,0,0.5),0 0 0 1px ${g}18,inset 0 1px 0 rgba(255,255,255,0.06)`:"0 4px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.04)",
-      animation:"fadein 0.35s ease both",...style,
-    }}>
-      {glow&&<div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at 0% 0%,${g}0a 0%,transparent 60%)`,pointerEvents:"none"}}/>}
-      {children}
-    </div>
-  );
-}
-
-function Btn({ children, color="var(--cyan)", onClick, style, disabled }) {
-  return (
-    <button disabled={disabled} onClick={onClick} style={{
-      padding:"9px 20px",borderRadius:11,fontSize:13,fontWeight:600,
-      background:`${color}18`,border:`1px solid ${color}44`,color,
-      transition:"all 0.18s",boxShadow:`0 0 16px ${color}18`,...style,
-    }}
-    onMouseEnter={e=>{if(!disabled){e.currentTarget.style.background=`${color}28`;e.currentTarget.style.boxShadow=`0 0 24px ${color}44`;e.currentTarget.style.transform="translateY(-1px)";}}}
-    onMouseLeave={e=>{e.currentTarget.style.background=`${color}18`;e.currentTarget.style.boxShadow=`0 0 16px ${color}18`;e.currentTarget.style.transform="translateY(0)";}}>
-    {children}
-    </button>
-  );
-}
-
-function Badge({ children, color }) {
-  return <span style={{padding:"3px 11px",borderRadius:20,fontSize:11,fontWeight:700,background:`${color}16`,color,border:`1px solid ${color}35`,letterSpacing:"0.6px",textTransform:"uppercase",whiteSpace:"nowrap"}}>{children}</span>;
-}
-
-function SectionHead({ children, color="var(--cyan)" }) {
-  return (
-    <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:16}}>
-      <div style={{width:2,height:16,borderRadius:2,background:color,boxShadow:`0 0 8px ${color}`}}/>
-      <span style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:13,color:"#fff",letterSpacing:"1.2px",textTransform:"uppercase"}}>{children}</span>
-    </div>
-  );
-}
-
-function Field({ label, type="text", value, onChange, placeholder, readOnly, style }) {
-  return (
-    <div style={{marginBottom:11,...style}}>
-      {label&&<div style={{fontSize:10,color:"var(--mute)",letterSpacing:"1.4px",textTransform:"uppercase",marginBottom:5}}>{label}</div>}
-      <input type={type} value={value} onChange={onChange} placeholder={placeholder} readOnly={readOnly}
-        style={{width:"100%",padding:"10px 13px",borderRadius:11,fontSize:13,background:readOnly?"rgba(255,255,255,0.02)":"rgba(255,255,255,0.04)",color:readOnly?"var(--mute)":"var(--text)"}}/>
-    </div>
-  );
-}
-
-function Drop({ label, value, onChange, options, style }) {
-  return (
-    <div style={{marginBottom:11,...style}}>
-      {label&&<div style={{fontSize:10,color:"var(--mute)",letterSpacing:"1.4px",textTransform:"uppercase",marginBottom:5}}>{label}</div>}
-      <select value={value} onChange={onChange} style={{width:"100%",padding:"10px 13px",borderRadius:11,fontSize:13}}>
-        {options.map(o=><option key={o.value||o} value={o.value||o}>{o.label||o}</option>)}
-      </select>
-    </div>
-  );
-}
-
-function Spinner({ color="var(--cyan)", size=18 }) {
-  return <span style={{display:"inline-block",width:size,height:size,border:`2px solid ${color}30`,borderTop:`2px solid ${color}`,borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/>;
-}
-
-function Toast({ msg, type }) {
-  if (!msg) return null;
-  const c = type==="error"?"var(--red)":"var(--cyan)";
-  return (
-    <div style={{position:"fixed",bottom:28,right:28,zIndex:9999,padding:"13px 18px",background:`${c}14`,border:`1px solid ${c}40`,borderRadius:14,color:c,fontSize:13,fontWeight:600,backdropFilter:"blur(20px)",maxWidth:320,animation:"fadein 0.3s ease"}}>
-      {type==="error"?"⚠ ":"✓ "}{msg}
-    </div>
-  );
-}
-
-function BG() {
-  return (
-    <div style={{position:"fixed",inset:0,zIndex:0,pointerEvents:"none",overflow:"hidden"}}>
-      <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,#020812 0%,#060f1e 45%,#09071a 75%,#030b15 100%)"}}/>
-      <div style={{position:"absolute",inset:0,backgroundImage:"linear-gradient(rgba(0,245,212,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,212,0.025) 1px,transparent 1px)",backgroundSize:"64px 64px"}}/>
-      <div style={{position:"absolute",width:560,height:560,borderRadius:"50%",background:"radial-gradient(circle,rgba(0,245,212,0.07) 0%,transparent 70%)",top:"-15%",left:"-12%",filter:"blur(50px)",animation:"orb 12s ease-in-out infinite"}}/>
-      <div style={{position:"absolute",width:480,height:480,borderRadius:"50%",background:"radial-gradient(circle,rgba(255,107,53,0.06) 0%,transparent 70%)",bottom:"-8%",right:"-8%",filter:"blur(50px)",animation:"orb 15s ease-in-out infinite reverse"}}/>
-      <div style={{position:"absolute",width:340,height:340,borderRadius:"50%",background:"radial-gradient(circle,rgba(167,139,250,0.05) 0%,transparent 70%)",top:"45%",left:"48%",filter:"blur(50px)",animation:"orb 18s ease-in-out infinite 2s"}}/>
-      {[...Array(8)].map((_,i)=>(
-        <div key={i} style={{position:"absolute",borderRadius:"50%",width:3+Math.sin(i)*2,height:3+Math.sin(i)*2,
-          background:["var(--cyan)","var(--orange)","var(--purple)","var(--cyan)","var(--yellow)","var(--orange)","var(--cyan)","var(--purple)"][i],
-          left:`${12+i*11}%`,top:`${18+Math.sin(i*0.8)*22}%`,
-          boxShadow:`0 0 14px ${["var(--cyan)","var(--orange)","var(--purple)","var(--cyan)","var(--yellow)","var(--orange)","var(--cyan)","var(--purple)"][i]}`,
-          animation:`blink ${3.5+i*0.6}s ${i*0.4}s ease-in-out infinite`}}/>
-      ))}
-    </div>
-  );
-}
-
-function KPI({ icon, label, value, sub, color }) {
-  return (
-    <Card glow={color} style={{padding:"20px 18px"}}>
-      <div style={{position:"absolute",top:-15,right:-15,width:70,height:70,borderRadius:"50%",background:`${color}14`,filter:"blur(18px)",pointerEvents:"none"}}/>
-      <div style={{fontSize:26,marginBottom:10}}>{icon}</div>
-      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:21,color:"#fff",letterSpacing:"-0.5px"}}>{value}</div>
-      <div style={{fontSize:11,color:"var(--mute)",marginTop:3}}>{label}</div>
-      {sub&&<div style={{fontSize:11,color,marginTop:6,fontWeight:700}}>{sub}</div>}
-    </Card>
-  );
-}
-
-function RevenueBar({ data }) {
-  const chart = data.slice(0,6).map(d=>({name:MONTHS[d.month],Revenue:d.amount,Expense:d.expense}));
-  const tip = {contentStyle:{background:"rgba(4,10,22,0.95)",border:"1px solid rgba(0,245,212,0.3)",borderRadius:10,fontSize:12},cursor:{fill:"rgba(0,245,212,0.04)"}};
-  return (
-    <Card style={{padding:"20px 18px"}}>
-      <SectionHead>Revenue vs Expense</SectionHead>
-      <ResponsiveContainer width="100%" height={220}>
-        <BarChart data={chart} barCategoryGap="30%">
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false}/>
-          <XAxis dataKey="name" stroke="rgba(255,255,255,0.3)" tick={{fontSize:10}} axisLine={false} tickLine={false}/>
-          <YAxis stroke="rgba(255,255,255,0.3)" tick={{fontSize:10}} axisLine={false} tickLine={false} tickFormatter={v=>`₹${(v/100000).toFixed(0)}L`}/>
-          <Tooltip {...tip} formatter={(v,n)=>[`₹${v.toLocaleString("en-IN")}`,n]}/>
-          <Legend wrapperStyle={{fontSize:11}}/>
-          <Bar dataKey="Revenue" fill="var(--cyan)"   radius={[6,6,0,0]}/>
-          <Bar dataKey="Expense" fill="var(--orange)" radius={[6,6,0,0]}/>
-        </BarChart>
-      </ResponsiveContainer>
-    </Card>
-  );
-}
-
-function PerfBars() {
-  const data = [{name:"Sales",value:65},{name:"Marketing",value:52},{name:"Operations",value:48},{name:"Development",value:72}];
-  const colors = ["var(--cyan)","var(--orange)","var(--purple)","var(--yellow)"];
-  return (
-    <div style={{display:"flex",flexDirection:"column",gap:10}}>
-      {data.map((d,i)=>(
-        <div key={i}>
-          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"rgba(255,255,255,0.6)",marginBottom:4}}>
-            <span>{d.name}</span><span style={{color:colors[i%4],fontWeight:700}}>{d.value}%</span>
-          </div>
-          <div style={{height:6,borderRadius:4,background:"rgba(255,255,255,0.07)",overflow:"hidden"}}>
-            <div style={{width:`${d.value}%`,height:"100%",borderRadius:4,background:`linear-gradient(90deg,${colors[i%4]},${colors[(i+1)%4]})`,transition:"width 1s ease"}}/>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Sidebar({ user, page, setPage, onLogout }) {
-  const glow = GLOW[user.role];
-  return (
-    <div style={{width:210,minHeight:"100vh",position:"relative",zIndex:10,flexShrink:0,background:"rgba(2,8,18,0.6)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderRight:"1px solid rgba(255,255,255,0.06)",display:"flex",flexDirection:"column"}}>
-      <div style={{padding:"22px 18px 16px",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:36,height:36,borderRadius:9,background:`linear-gradient(135deg,${glow},${glow}66)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,boxShadow:`0 0 18px ${glow}55`}}>⬡</div>
-          <div>
-            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:13,color:"#fff",letterSpacing:"2px"}}>INDUSTRIA</div>
-            <div style={{fontFamily:"'Syne',sans-serif",fontSize:9,color:glow,letterSpacing:"3px"}}>OS v1.0</div>
-          </div>
-        </div>
-      </div>
-      <div style={{padding:"12px 18px 11px",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:36,height:36,borderRadius:9,background:`${glow}18`,border:`1.5px solid ${glow}50`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:12,color:glow,flexShrink:0}}>{user.avatar}</div>
-          <div style={{minWidth:0}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{user.name}</div>
-            <div style={{fontSize:10,color:glow,fontWeight:600}}>{LABEL[user.role]}</div>
-          </div>
-        </div>
-      </div>
-      <nav style={{flex:1,padding:"10px 10px"}}>
-        {NAV[user.role].map(([icon,id,label])=>{
-          const active=page===id;
-          return (
-            <button key={id} onClick={()=>setPage(id)} style={{width:"100%",display:"flex",alignItems:"center",gap:9,padding:"10px 13px",borderRadius:11,border:"none",marginBottom:3,
-              background:active?`${glow}16`:"transparent",borderLeft:active?`2px solid ${glow}`:"2px solid transparent",
-              color:active?"#fff":"rgba(255,255,255,0.32)",fontSize:12,fontWeight:active?600:400,transition:"all 0.18s",textAlign:"left"}}>
-              <span style={{fontSize:14,color:active?glow:"rgba(255,255,255,0.22)"}}>{icon}</span>
-              <span>{label}</span>
-              {active&&<div style={{marginLeft:"auto",width:5,height:5,borderRadius:"50%",background:glow,boxShadow:`0 0 7px ${glow}`}}/>}
-            </button>
-          );
-        })}
-      </nav>
-      <div style={{padding:"12px 10px",borderTop:"1px solid rgba(255,255,255,0.05)"}}>
-        <button onClick={onLogout} style={{width:"100%",display:"flex",alignItems:"center",gap:9,padding:"10px 13px",borderRadius:11,border:"1px solid rgba(255,80,80,0.18)",background:"rgba(255,80,80,0.05)",color:"#ff8888",fontSize:12,fontWeight:500}}>🚪 Sign Out</button>
-      </div>
-    </div>
-  );
-}
-
-function Topbar({ user, page }) {
-  const glow = GLOW[user.role];
-  const TITLES = {dashboard:"Dashboard",hrmonitor:"HR Monitor",revenue:"Revenue Analytics",comms:"Communications",employees:"Employees",leaves:"Leave Management",payroll:"Payroll",myleave:"My Leaves",mypayroll:"My Payroll",profile:"My Profile"};
-  const now = new Date().toLocaleDateString("en-IN",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
-  return (
-    <div style={{height:62,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 26px",flexShrink:0,position:"relative",zIndex:10,background:"rgba(2,8,18,0.5)",backdropFilter:"blur(20px)",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
-      <div>
-        <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:15,color:"#fff",letterSpacing:"0.8px"}}>{TITLES[page]||"Dashboard"}</div>
-        <div style={{fontSize:10,color:"var(--mute)",marginTop:1}}>{now}</div>
-      </div>
-      <div style={{display:"flex",alignItems:"center",gap:11}}>
-        <div style={{position:"relative"}}>
-          <div style={{width:34,height:34,borderRadius:9,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.09)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>🔔</div>
-          <div style={{position:"absolute",top:-2,right:-2,width:9,height:9,borderRadius:"50%",background:glow,boxShadow:`0 0 6px ${glow}`,border:"2px solid var(--bg0)"}}/>
-        </div>
-        <Badge color={glow}>{LABEL[user.role]}</Badge>
-        <div style={{width:34,height:34,borderRadius:9,background:`${glow}18`,border:`1.5px solid ${glow}40`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:11,color:glow}}>{user.avatar}</div>
-      </div>
-    </div>
-  );
-}
-
-function AdminDash({ employees, leaves, payroll }) {
-  const total = payroll.reduce((s,p)=>s+p.net_salary,0);
-  const rev   = MOCK_REVENUE[MOCK_REVENUE.length-1];
-  const WARNINGS = [
-    {level:"ALERT",  icon:"⚠️", message:`${payroll.filter(p=>p.status!=="PAID").length} payroll entries pending.`},
-    {level:"NOTICE", icon:"📅", message:`${leaves.filter(l=>l.status==="PENDING").length} leave requests awaiting approval.`},
-    {level:"OK",     icon:"✅", message:"Revenue up 21.8% compared to last month."},
-  ];
-  const LC = {ALERT:"var(--orange)",NOTICE:"var(--yellow)",OK:"var(--cyan)"};
-  return (
-    <div style={{padding:22,display:"flex",flexDirection:"column",gap:18}}>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:13}}>
-        <KPI icon="👥" label="Total Employees"  value={employees.length}                               sub="In system"  color="var(--cyan)"  />
-        <KPI icon="✅" label="Active Employees"  value={employees.filter(e=>e.user.is_active).length}  sub="Active"     color="var(--orange)"/>
-        <KPI icon="💰" label="Monthly Payroll"  value={`₹${(total/100000).toFixed(1)}L`}              sub="This month" color="var(--purple)"/>
-        <KPI icon="📈" label="Revenue"          value={`₹${(rev.amount/100000).toFixed(1)}L`}         sub="Latest"     color="var(--cyan)"  />
-        <KPI icon="🏆" label="Net Profit"       value={`₹${(rev.profit/100000).toFixed(1)}L`}         sub="Latest"     color="var(--orange)"/>
-        <KPI icon="📊" label="Profit Margin"    value={`${((rev.profit/rev.amount)*100).toFixed(1)}%`} sub="Ratio"     color="var(--purple)"/>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"1.65fr 1fr",gap:13}}>
-        <RevenueBar data={MOCK_REVENUE}/>
-        <div style={{display:"flex",flexDirection:"column",gap:13}}>
-          <Card style={{padding:"18px 20px",flex:1}}>
-            <SectionHead color="var(--purple)">Dept Performance</SectionHead>
-            <PerfBars/>
-          </Card>
-          <Card style={{padding:"18px 20px"}}>
-            <SectionHead color="var(--orange)">Warnings</SectionHead>
-            <div style={{display:"flex",flexDirection:"column",gap:7}}>
-              {WARNINGS.map((w,i)=>{
-                const c=LC[w.level]||"var(--cyan)";
-                return (
-                  <div key={i} style={{display:"flex",gap:9,padding:"9px 11px",background:`${c}09`,border:`1px solid ${c}20`,borderRadius:10}}>
-                    <span style={{fontSize:14}}>{w.icon}</span>
-                    <div>
-                      <div style={{fontSize:9,fontWeight:700,color:c,letterSpacing:"1.4px",textTransform:"uppercase"}}>{w.level}</div>
-                      <div style={{fontSize:11,color:"rgba(255,255,255,0.65)",marginTop:1,lineHeight:1.4}}>{w.message}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function HRMonitorPage() {
-  const COLS=["var(--cyan)","var(--purple)","var(--orange)","var(--yellow)","var(--red)"];
-  return (
-    <div style={{padding:22,display:"flex",flexDirection:"column",gap:18}}>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:13}}>
-        <KPI icon="✅" label="Activity Logs" value={MOCK_LOGS.length} sub="Total"      color="var(--cyan)"  />
-        <KPI icon="📅" label="Today"         value={2}                sub="Today"      color="var(--orange)"/>
-        <KPI icon="👥" label="Active Users"  value={4}                sub="All roles"  color="var(--purple)"/>
-        <KPI icon="📨" label="Emails Sent"   value={12}               sub="This month" color="var(--cyan)"  />
-      </div>
-      <Card style={{padding:"20px 22px"}}>
-        <SectionHead>HR Activity Log</SectionHead>
-        <div style={{display:"flex",flexDirection:"column",gap:7}}>
-          {MOCK_LOGS.map((l,i)=>(
-            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 14px",background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.05)",borderRadius:10,borderLeft:`2px solid ${COLS[i%5]}`}}>
-              <div>
-                <span style={{fontSize:12,color:"rgba(255,255,255,0.72)"}}>{l.action}</span>
-                <span style={{fontSize:11,color:"var(--mute)",marginLeft:8}}>by {l.user}</span>
-              </div>
-              <span style={{fontSize:10,color:"rgba(255,255,255,0.22)",flexShrink:0,marginLeft:14}}>{new Date(l.created_at).toLocaleString("en-IN")}</span>
-            </div>
-          ))}
-        </div>
-      </Card>
-    </div>
-  );
-}
-
-function RevenuePage() {
-  const [revenue,setRevenue]=useState(MOCK_REVENUE);
-  const [toast,setToast]=useState(null);
-  const [form,setForm]=useState({month:new Date().getMonth()+1,year:new Date().getFullYear(),amount:"",expense:""});
-  const toast_=(msg,type="success")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
-  const lat=revenue[revenue.length-1];
-  const save=()=>{
-    if(!form.amount||!form.expense) return toast_("Fill all fields","error");
-    setRevenue(p=>[...p,{month:+form.month,year:+form.year,amount:+form.amount,expense:+form.expense,profit:+form.amount - +form.expense}]);
-    toast_("Revenue saved!"); setForm(p=>({...p,amount:"",expense:""}));
-  };
-  return (
-    <div style={{padding:22,display:"flex",flexDirection:"column",gap:18}}>
-      {toast&&<Toast msg={toast.msg} type={toast.type}/>}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:13}}>
-        <KPI icon="📈" label="Revenue" value={`₹${(lat.amount/100000).toFixed(1)}L`}  sub="Latest" color="var(--cyan)"  />
-        <KPI icon="📉" label="Expense" value={`₹${(lat.expense/100000).toFixed(1)}L`} sub="Latest" color="var(--orange)"/>
-        <KPI icon="🏆" label="Profit"  value={`₹${(lat.profit/100000).toFixed(1)}L`}  sub="Latest" color="var(--purple)"/>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"1.6fr 1fr",gap:13}}>
-        <RevenueBar data={revenue}/>
-        <Card style={{padding:"18px 20px"}}>
-          <SectionHead>Add Revenue Entry</SectionHead>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9}}>
-            <Field label="Month" type="number" value={form.month}   onChange={e=>setForm(p=>({...p,month:e.target.value}))}/>
-            <Field label="Year"  type="number" value={form.year}    onChange={e=>setForm(p=>({...p,year:e.target.value}))}/>
-          </div>
-          <Field label="Revenue ₹" type="number" value={form.amount}  onChange={e=>setForm(p=>({...p,amount:e.target.value}))}  placeholder="5000000"/>
-          <Field label="Expense ₹" type="number" value={form.expense} onChange={e=>setForm(p=>({...p,expense:e.target.value}))} placeholder="2000000"/>
-          <Btn color="var(--cyan)" onClick={save} style={{width:"100%",textAlign:"center"}}>Save Revenue</Btn>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function HRDash({ employees, leaves, payroll }) {
-  const total=payroll.reduce((s,p)=>s+p.net_salary,0);
-  return (
-    <div style={{padding:22,display:"flex",flexDirection:"column",gap:18}}>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:13}}>
-        <KPI icon="👥" label="Employees"       value={employees.length}                               sub="Total"      color="var(--cyan)"  />
-        <KPI icon="📅" label="Pending Leaves"  value={leaves.filter(l=>l.status==="PENDING").length}  sub="Review"     color="var(--orange)"/>
-        <KPI icon="⏳" label="Payroll Pending" value={payroll.filter(p=>p.status!=="PAID").length}    sub="This month" color="var(--purple)"/>
-        <KPI icon="💰" label="Payroll Total"   value={`₹${(total/100000).toFixed(1)}L`}              sub="This month" color="var(--cyan)"  />
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"1.65fr 1fr",gap:13}}>
-        <RevenueBar data={MOCK_REVENUE}/>
-        <Card style={{padding:"18px 20px"}}>
-          <SectionHead color="var(--purple)">Dept Performance</SectionHead>
-          <PerfBars/>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function EmployeesPage({ employees, setEmployees }) {
-  const [search,setSearch]=useState("");
-  const [showAdd,setShowAdd]=useState(false);
-  const [toast,setToast]=useState(null);
-  const [form,setForm]=useState({name:"",email:"",department:"",position:"",base_salary:""});
-  const COLS=["var(--purple)","var(--orange)","var(--cyan)","var(--yellow)","var(--red)","#34d399"];
-  const toast_=(msg,type="success")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
-
-  const add=()=>{
-    if(!form.name||!form.email) return toast_("Fill required fields","error");
-    setEmployees(p=>[...p,{id:Date.now(),user:{name:form.name,email:form.email,is_active:true},department:form.department,position:form.position,base_salary:+form.base_salary||0}]);
-    toast_("Employee added!"); setShowAdd(false);
-    setForm({name:"",email:"",department:"",position:"",base_salary:""});
-  };
-
-  const del=(id)=>{if(window.confirm("Remove this employee?")){setEmployees(p=>p.filter(e=>e.id!==id));toast_("Employee removed!");}};
-  const filtered=employees.filter(e=>e.user.name.toLowerCase().includes(search.toLowerCase())||e.department.toLowerCase().includes(search.toLowerCase()));
-
-  return (
-    <div style={{padding:22}}>
-      {toast&&<Toast msg={toast.msg} type={toast.type}/>}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-        <SectionHead color="var(--cyan)">Employee Directory</SectionHead>
-        <Btn color="var(--cyan)" onClick={()=>setShowAdd(p=>!p)}>+ Add Employee</Btn>
-      </div>
-      {showAdd&&(
-        <Card glow="var(--cyan)" style={{padding:22,marginBottom:18,animation:"fadein 0.25s ease"}}>
-          <SectionHead>New Employee</SectionHead>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11}}>
-            <Field label="Full Name"   value={form.name}        onChange={e=>setForm(p=>({...p,name:e.target.value}))}        placeholder="Arun Patel"/>
-            <Field label="Email"       value={form.email}       onChange={e=>setForm(p=>({...p,email:e.target.value}))}       placeholder="arun@co.com"/>
-            <Field label="Department"  value={form.department}  onChange={e=>setForm(p=>({...p,department:e.target.value}))}  placeholder="Engineering"/>
-            <Field label="Position"    value={form.position}    onChange={e=>setForm(p=>({...p,position:e.target.value}))}    placeholder="Developer"/>
-            <Field label="Base Salary" type="number" value={form.base_salary} onChange={e=>setForm(p=>({...p,base_salary:e.target.value}))} placeholder="85000" style={{gridColumn:"span 2"}}/>
-          </div>
-          <div style={{display:"flex",gap:9,marginTop:4}}>
-            <Btn color="var(--cyan)" onClick={add}>Save Employee</Btn>
-            <Btn color="var(--red)"  onClick={()=>setShowAdd(false)}>Cancel</Btn>
-          </div>
-        </Card>
-      )}
-      <div style={{position:"relative",marginBottom:14}}>
-        <span style={{position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",opacity:0.35,fontSize:14}}>🔍</span>
-        <input placeholder="Search by name or department…" value={search} onChange={e=>setSearch(e.target.value)} style={{width:"100%",padding:"10px 13px 10px 38px",borderRadius:11,fontSize:13}}/>
-      </div>
-      <Card style={{overflow:"hidden"}}>
-        <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
-          <thead>
-            <tr style={{borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-              {["Employee","Department","Position","Salary","Status","Action"].map(h=>(
-                <th key={h} style={{padding:"11px 14px",textAlign:"left",fontSize:10,color:"var(--mute)",letterSpacing:"1.2px",textTransform:"uppercase",fontWeight:600}}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((e,i)=>{
-              const col=COLS[i%COLS.length];
-              const av=e.user.name.split(" ").map(n=>n[0]).join("").slice(0,2).toUpperCase();
-              return (
-                <tr key={e.id} style={{borderBottom:"1px solid rgba(255,255,255,0.04)"}}
-                  onMouseEnter={ev=>ev.currentTarget.style.background="rgba(255,255,255,0.02)"}
-                  onMouseLeave={ev=>ev.currentTarget.style.background=""}>
-                  <td style={{padding:"11px 14px"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <div style={{width:32,height:32,borderRadius:8,background:`${col}18`,border:`1.5px solid ${col}40`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:11,color:col,flexShrink:0}}>{av}</div>
-                      <div>
-                        <div style={{fontWeight:600}}>{e.user.name}</div>
-                        <div style={{fontSize:11,color:"var(--mute)"}}>{e.user.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td style={{padding:"11px 14px",color:"var(--mute)"}}>{e.department}</td>
-                  <td style={{padding:"11px 14px",color:"var(--mute)"}}>{e.position}</td>
-                  <td style={{padding:"11px 14px",fontWeight:600}}>₹{e.base_salary.toLocaleString("en-IN")}</td>
-                  <td style={{padding:"11px 14px"}}><Badge color={e.user.is_active?"var(--cyan)":"var(--red)"}>{e.user.is_active?"Active":"Inactive"}</Badge></td>
-                  <td style={{padding:"11px 14px"}}><Btn color="var(--red)" style={{padding:"4px 11px",fontSize:11}} onClick={()=>del(e.id)}>Remove</Btn></td>
-                </tr>
-              );
-            })}
-            {filtered.length===0&&<tr><td colSpan={6} style={{padding:30,textAlign:"center",color:"var(--mute)",fontSize:13}}>No employees found</td></tr>}
-          </tbody>
-        </table>
-      </Card>
-    </div>
-  );
-}
-
-function LeavesPage({ leaves, setLeaves }) {
-  const [filter,setFilter]=useState("PENDING");
-  const [toast,setToast]=useState(null);
-  const toast_=(msg,type="success")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
-  const review=(id,status)=>{setLeaves(p=>p.map(l=>l.id===id?{...l,status}:l));toast_(`Leave ${status.toLowerCase()}!`);};
-  const filtered=leaves.filter(l=>l.status===filter);
-  return (
-    <div style={{padding:22}}>
-      {toast&&<Toast msg={toast.msg} type={toast.type}/>}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-        <SectionHead>Leave Requests</SectionHead>
-        <div style={{display:"flex",gap:7}}>
-          {["PENDING","APPROVED","REJECTED"].map(s=>(
-            <Btn key={s} color={filter===s?"var(--cyan)":"rgba(255,255,255,0.2)"} style={{padding:"5px 13px",fontSize:11}} onClick={()=>setFilter(s)}>{s}</Btn>
-          ))}
-        </div>
-      </div>
-      <div style={{display:"flex",flexDirection:"column",gap:11}}>
-        {filtered.map(l=>(
-          <Card key={l.id} style={{padding:"15px 18px"}}>
-            <div style={{display:"flex",alignItems:"flex-start",gap:13}}>
-              <div style={{flex:1}}>
-                <div style={{fontSize:14,fontWeight:700,color:"#fff"}}>Leave #{l.id} — {l.leave_type}</div>
-                <div style={{fontSize:11,color:"var(--mute)",marginTop:3}}>{l.days} days · {l.start_date} → {l.end_date}</div>
-                {l.reason&&<div style={{fontSize:11,color:"rgba(255,255,255,0.45)",marginTop:3}}>"{l.reason}"</div>}
-              </div>
-              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:7}}>
-                <Badge color={l.status==="APPROVED"?"var(--cyan)":l.status==="REJECTED"?"var(--red)":"var(--yellow)"}>{l.status}</Badge>
-                {l.status==="PENDING"&&(
-                  <div style={{display:"flex",gap:7}}>
-                    <Btn color="var(--cyan)" style={{padding:"5px 13px"}} onClick={()=>review(l.id,"APPROVED")}>Approve</Btn>
-                    <Btn color="var(--red)"  style={{padding:"5px 13px"}} onClick={()=>review(l.id,"REJECTED")}>Reject</Btn>
-                  </div>
-                )}
-              </div>
-            </div>
-          </Card>
-        ))}
-        {filtered.length===0&&<div style={{color:"var(--mute)",fontSize:13,textAlign:"center",padding:40}}>No {filter.toLowerCase()} leaves</div>}
-      </div>
-    </div>
-  );
-}
-
-function PayrollPage({ employees, payroll, setPayroll }) {
-  const [showAdd,setShowAdd]=useState(false);
-  const [toast,setToast]=useState(null);
-  const now=new Date();
-  const [form,setForm]=useState({employee_id:"",base_salary:"",bonus:"0",deductions:"0"});
-  const COLS=["var(--purple)","var(--orange)","var(--cyan)","var(--yellow)"];
-  const toast_=(msg,type="success")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
-
-  const add=()=>{
-    if(!form.employee_id||!form.base_salary) return toast_("Fill all fields","error");
-    const net=+form.base_salary+(+form.bonus||0)-(+form.deductions||0);
-    setPayroll(p=>[...p,{id:Date.now(),employee_id:+form.employee_id,month:now.getMonth()+1,year:now.getFullYear(),base_salary:+form.base_salary,bonus:+form.bonus||0,deductions:+form.deductions||0,net_salary:net,status:"PENDING"}]);
-    toast_("Payroll created!"); setShowAdd(false);
-    setForm({employee_id:"",base_salary:"",bonus:"0",deductions:"0"});
-  };
-
-  const markPaid=(id)=>{setPayroll(p=>p.map(x=>x.id===id?{...x,status:"PAID"}:x));toast_("Marked as paid! 📧");};
-  const net=(+form.base_salary||0)+(+form.bonus||0)-(+form.deductions||0);
-
-  return (
-    <div style={{padding:22}}>
-      {toast&&<Toast msg={toast.msg} type={toast.type}/>}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-        <SectionHead>Payroll — {MONTHS[now.getMonth()+1]} {now.getFullYear()}</SectionHead>
-        <Btn color="var(--cyan)" onClick={()=>setShowAdd(p=>!p)}>+ Add Payroll</Btn>
-      </div>
-      {showAdd&&(
-        <Card glow="var(--cyan)" style={{padding:22,marginBottom:18,animation:"fadein 0.25s ease"}}>
-          <SectionHead>Create Payroll Entry</SectionHead>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11}}>
-            <Drop label="Employee" value={form.employee_id} onChange={e=>setForm(p=>({...p,employee_id:e.target.value}))}
-              options={[{value:"",label:"Select employee"},...employees.map(e=>({value:e.id,label:e.user.name}))]}/>
-            <Field label="Base Salary" type="number" value={form.base_salary} onChange={e=>setForm(p=>({...p,base_salary:e.target.value}))} placeholder="85000"/>
-            <Field label="Bonus"       type="number" value={form.bonus}       onChange={e=>setForm(p=>({...p,bonus:e.target.value}))}       placeholder="0"/>
-            <Field label="Deductions"  type="number" value={form.deductions}  onChange={e=>setForm(p=>({...p,deductions:e.target.value}))}  placeholder="0"/>
-          </div>
-          <div style={{padding:"11px 14px",background:"rgba(0,245,212,0.05)",border:"1px solid rgba(0,245,212,0.18)",borderRadius:11,marginBottom:13}}>
-            <span style={{fontSize:12,color:"var(--mute)"}}>Net Salary: </span>
-            <span style={{fontFamily:"'Syne',sans-serif",fontWeight:800,color:"var(--cyan)",fontSize:16}}>₹{net.toLocaleString("en-IN")}</span>
-          </div>
-          <div style={{display:"flex",gap:9}}>
-            <Btn color="var(--cyan)" onClick={add}>Create</Btn>
-            <Btn color="var(--red)"  onClick={()=>setShowAdd(false)}>Cancel</Btn>
-          </div>
-        </Card>
-      )}
-      <div style={{display:"flex",flexDirection:"column",gap:10}}>
-        {payroll.map((p,i)=>{
-          const emp=employees.find(e=>e.id===p.employee_id);
-          const col=COLS[i%COLS.length];
-          const av=emp?.user?.name?.split(" ").map(n=>n[0]).join("").slice(0,2).toUpperCase()||"--";
-          return (
-            <Card key={p.id} glow={p.status==="PAID"?"var(--cyan)":col} style={{padding:"13px 16px",display:"flex",alignItems:"center",gap:13}}>
-              <div style={{width:36,height:36,borderRadius:8,background:`${col}18`,border:`1.5px solid ${col}38`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:11,color:col,flexShrink:0}}>{av}</div>
-              <div style={{flex:1}}>
-                <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{emp?.user?.name||`Employee #${p.employee_id}`}</div>
-                <div style={{fontSize:11,color:"var(--mute)"}}>Base ₹{p.base_salary.toLocaleString("en-IN")} · Bonus ₹{p.bonus.toLocaleString("en-IN")} · Ded ₹{p.deductions.toLocaleString("en-IN")}</div>
-              </div>
-              <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:16,color:"#fff",marginRight:8}}>₹{p.net_salary.toLocaleString("en-IN")}</div>
-              <Badge color={p.status==="PAID"?"var(--cyan)":"var(--yellow)"}>{p.status}</Badge>
-              {p.status!=="PAID"&&<Btn color="var(--cyan)" style={{padding:"5px 12px",fontSize:11,marginLeft:8}} onClick={()=>markPaid(p.id)}>Mark Paid</Btn>}
-            </Card>
-          );
-        })}
-        {payroll.length===0&&<div style={{color:"var(--mute)",fontSize:13,textAlign:"center",padding:40}}>No payroll entries yet</div>}
-      </div>
-    </div>
-  );
-}
-
-function EmpDash({ user, leaves, payroll }) {
-  const glow=GLOW[user.role];
-  const myPayroll=payroll.find(p=>p.status==="PAID");
-  return (
-    <div style={{padding:22,display:"flex",flexDirection:"column",gap:18}}>
-      <Card glow={glow} style={{padding:"22px 26px"}}>
-        <div style={{display:"flex",alignItems:"center",gap:16}}>
-          <div style={{width:58,height:58,borderRadius:14,background:`${glow}18`,border:`2px solid ${glow}40`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:20,color:glow}}>{user.avatar}</div>
-          <div>
-            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:18,color:"#fff"}}>Hey, {user.name.split(" ")[0]}! 👋</div>
-            <div style={{fontSize:12,color:"var(--mute)",marginTop:3}}>{new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"})}</div>
-            <div style={{marginTop:8}}><Badge color={glow}>{LABEL[user.role]}</Badge></div>
-          </div>
-        </div>
-      </Card>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:13}}>
-        <KPI icon="🌿" label="Leave Balance" value="12 days" sub="Available"   color="var(--cyan)"  />
-        <KPI icon="📅" label="Used Leave"    value="3 days"  sub="This year"   color="var(--yellow)"/>
-        <KPI icon="⏳" label="Pending Leave" value={leaves.filter(l=>l.status==="PENDING").length} sub="Awaiting HR" color="var(--orange)"/>
-        <KPI icon="💰" label="Last Salary"   value={myPayroll?`₹${myPayroll.net_salary.toLocaleString("en-IN")}`:"—"} sub="Latest" color="var(--purple)"/>
-      </div>
-    </div>
-  );
-}
-
-function MyLeavePage({ user, leaves, setLeaves }) {
-  const glow=GLOW[user.role];
-  const [show,setShow]=useState(false);
-  const [toast,setToast]=useState(null);
-  const [form,setForm]=useState({leave_type:"SICK",start_date:"",end_date:"",reason:""});
-  const toast_=(msg,type="success")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
-
-  const apply=()=>{
-    if(!form.start_date||!form.end_date) return toast_("Fill dates","error");
-    const days=Math.max(1,Math.ceil((new Date(form.end_date)-new Date(form.start_date))/(1000*60*60*24))+1);
-    setLeaves(p=>[...p,{id:Date.now(),...form,days,status:"PENDING"}]);
-    toast_("Leave applied successfully!"); setShow(false);
-    setForm({leave_type:"SICK",start_date:"",end_date:"",reason:""});
+  const generate = async () => {
+    const prompts = {
+      admin: 'Generate a concise 3-bullet executive summary. Revenue: $2.4M (+12%), 145 employees, Growth 23.5%, Best dept: Development 72%. Use • bullets only.',
+      hr: 'Generate a concise 3-bullet HR summary. 145 employees, 8 pending leaves, Attendance 94.2%, Salary 98% processed ($235k of $245k). Use • bullets only.',
+      employee: 'Generate a brief 3-bullet personal work summary. Leave balance: 12 days, Next payslip: Mar 31, Attendance: 96%, Pending tasks: 2 docs. Use • bullets only.'
+    };
+    const res = await ask('You are a concise business intelligence assistant. Respond with bullet points only using •. No headers, no extra text.', prompts[userRole]);
+    setSummary(res);
   };
 
   return (
-    <div style={{padding:22}}>
-      {toast&&<Toast msg={toast.msg} type={toast.type}/>}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-        <SectionHead color={glow}>My Leave Requests</SectionHead>
-        <Btn color={glow} onClick={()=>setShow(p=>!p)}>+ Apply Leave</Btn>
-      </div>
-      {show&&(
-        <Card glow={glow} style={{padding:20,marginBottom:15,animation:"fadein 0.25s ease"}}>
-          <Drop label="Leave Type" value={form.leave_type} onChange={e=>setForm(p=>({...p,leave_type:e.target.value}))}
-            options={[{value:"SICK",label:"Sick Leave"},{value:"CASUAL",label:"Casual Leave"},{value:"ANNUAL",label:"Annual Leave"},{value:"OTHER",label:"Other"}]}/>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11}}>
-            <Field label="Start Date" type="date" value={form.start_date} onChange={e=>setForm(p=>({...p,start_date:e.target.value}))}/>
-            <Field label="End Date"   type="date" value={form.end_date}   onChange={e=>setForm(p=>({...p,end_date:e.target.value}))}/>
-          </div>
-          <div style={{marginBottom:11}}>
-            <div style={{fontSize:10,color:"var(--mute)",letterSpacing:"1.4px",textTransform:"uppercase",marginBottom:5}}>Reason</div>
-            <textarea rows={2} value={form.reason} onChange={e=>setForm(p=>({...p,reason:e.target.value}))}
-              style={{width:"100%",padding:"9px 12px",borderRadius:10,fontSize:13,resize:"vertical"}}/>
-          </div>
-          <div style={{display:"flex",gap:9}}>
-            <Btn color={glow} onClick={apply}>Submit Leave</Btn>
-            <Btn color="var(--red)" onClick={()=>setShow(false)}>Cancel</Btn>
-          </div>
-        </Card>
-      )}
-      <div style={{display:"flex",flexDirection:"column",gap:10}}>
-        {leaves.map(l=>(
-          <Card key={l.id} style={{padding:"13px 16px",display:"flex",alignItems:"center",gap:13}}>
-            <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{l.leave_type}</div>
-              <div style={{fontSize:11,color:"var(--mute)",marginTop:2}}>{l.days} days · {l.start_date} → {l.end_date}</div>
-              {l.reason&&<div style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginTop:2}}>"{l.reason}"</div>}
-            </div>
-            <Badge color={l.status==="APPROVED"?"var(--cyan)":l.status==="REJECTED"?"var(--red)":"var(--yellow)"}>{l.status}</Badge>
-          </Card>
-        ))}
-        {leaves.length===0&&<div style={{color:"var(--mute)",fontSize:13,textAlign:"center",padding:40}}>No leave requests yet</div>}
-      </div>
-    </div>
-  );
-}
-
-function MyPayrollPage({ payroll }) {
-  return (
-    <div style={{padding:22}}>
-      <SectionHead color="var(--purple)">Payroll History</SectionHead>
-      <div style={{display:"flex",flexDirection:"column",gap:14}}>
-        {payroll.map(p=>(
-          <Card key={p.id} glow="var(--purple)" style={{padding:"17px 20px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:13}}>
-              <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:13,color:"#fff"}}>{MONTHS[p.month]} {p.year}</div>
-              <Badge color={p.status==="PAID"?"var(--cyan)":"var(--yellow)"}>{p.status}</Badge>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:9}}>
-              {[["Base",p.base_salary,"var(--cyan)"],["Bonus",p.bonus,"#34d399"],["Deductions",p.deductions,"var(--orange)"],["Net Pay",p.net_salary,"var(--purple)"]].map(([l,v,c])=>(
-                <div key={l} style={{background:`${c}09`,border:`1px solid ${c}20`,borderRadius:11,padding:"11px 13px"}}>
-                  <div style={{fontSize:10,color:"var(--mute)",textTransform:"uppercase",letterSpacing:"0.5px"}}>{l}</div>
-                  <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:15,color:c,marginTop:5}}>₹{v.toLocaleString("en-IN")}</div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        ))}
-        {payroll.length===0&&<div style={{color:"var(--mute)",fontSize:13,textAlign:"center",padding:40}}>No payroll records yet</div>}
-      </div>
-    </div>
-  );
-}
-
-function ProfilePage({ user }) {
-  const glow=GLOW[user.role];
-  const [phone,setPhone]=useState("+91 98765 43210");
-  const [address,setAddress]=useState("Hyderabad, Telangana");
-  const [emergency,setEmergency]=useState("+91 91234 56789");
-  const [toast,setToast]=useState(null);
-  const toast_=(msg,type="success")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
-  return (
-    <div style={{padding:22}}>
-      {toast&&<Toast msg={toast.msg} type={toast.type}/>}
-      <SectionHead color={glow}>My Profile</SectionHead>
-      <div style={{display:"grid",gridTemplateColumns:"220px 1fr",gap:14}}>
-        <Card glow={glow} style={{padding:"26px 18px",textAlign:"center"}}>
-          <div style={{width:72,height:72,borderRadius:18,background:`${glow}18`,border:`2px solid ${glow}45`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:26,color:glow,margin:"0 auto 13px"}}>{user.avatar}</div>
-          <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:13,color:"#fff"}}>{user.name}</div>
-          <div style={{fontSize:11,color:"var(--mute)",marginTop:3}}>Engineering</div>
-          <div style={{marginTop:9,display:"flex",flexDirection:"column",gap:5,alignItems:"center"}}>
-            <Badge color={glow}>{LABEL[user.role]}</Badge>
-            <Badge color="var(--purple)">Sr. Developer</Badge>
-          </div>
-        </Card>
-        <Card style={{padding:22}}>
-          <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.25)",letterSpacing:"2px",textTransform:"uppercase",marginBottom:13}}>Editable Info</div>
-          <Field label="Phone"             value={phone}     onChange={e=>setPhone(e.target.value)}     placeholder="+91 98765 43210"/>
-          <Field label="Address"           value={address}   onChange={e=>setAddress(e.target.value)}   placeholder="City, State"/>
-          <Field label="Emergency Contact" value={emergency} onChange={e=>setEmergency(e.target.value)} placeholder="+91 91234 56789"/>
-          <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.25)",letterSpacing:"2px",textTransform:"uppercase",margin:"16px 0 11px"}}>Read-only Info</div>
-          {[["Email",user.email],["Department","Engineering"],["Position","Sr. Developer"],["Base Salary","₹95,000"],["Join Date","Jan 2024"]].map(([l,v])=>(
-            <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"8px 11px",background:"rgba(255,255,255,0.02)",borderRadius:8,marginBottom:5,border:"1px solid rgba(255,255,255,0.04)"}}>
-              <span style={{fontSize:12,color:"rgba(255,255,255,0.25)"}}>{l}</span>
-              <span style={{fontSize:12,color:"rgba(255,255,255,0.52)"}}>{v}</span>
-            </div>
-          ))}
-          <Btn color={glow} onClick={()=>toast_("Profile updated!")} style={{marginTop:14}}>Save Changes</Btn>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function CommsPage() {
-  const [subject,setSubject]=useState("");
-  const [body,setBody]=useState("");
-  const [dept,setDept]=useState("all");
-  const [toast,setToast]=useState(null);
-  const toast_=(msg,type="success")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
-  const send=()=>{
-    if(!subject||!body) return toast_("Fill subject and message","error");
-    toast_("Email sent! 📨"); setSubject(""); setBody("");
-  };
-  return (
-    <div style={{padding:22}}>
-      {toast&&<Toast msg={toast.msg} type={toast.type}/>}
-      <SectionHead>Send Announcement</SectionHead>
-      <Card style={{padding:24,maxWidth:560}}>
-        <Drop label="Send To" value={dept} onChange={e=>setDept(e.target.value)}
-          options={[{value:"all",label:"All Employees"},{value:"Engineering",label:"Engineering"},{value:"Design",label:"Design"},{value:"Sales",label:"Sales"},{value:"Marketing",label:"Marketing"}]}/>
-        <Field label="Subject" value={subject} onChange={e=>setSubject(e.target.value)} placeholder="Enter subject…"/>
-        <div style={{marginBottom:13}}>
-          <div style={{fontSize:10,color:"var(--mute)",letterSpacing:"1.4px",textTransform:"uppercase",marginBottom:5}}>Message</div>
-          <textarea rows={5} value={body} onChange={e=>setBody(e.target.value)} placeholder="Type your message…"
-            style={{width:"100%",padding:"10px 13px",borderRadius:11,fontSize:13,resize:"vertical"}}/>
+    <div className="glass-effect rounded-2xl p-6 card-hover" style={{ borderColor: 'rgba(0,255,247,0.2)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Bot size={18} color="#00FFF7" />
+          <h3 style={{ fontWeight: 600, fontSize: 15, color: 'white', margin: 0 }}>AI Smart Summary</h3>
         </div>
-        <Btn color="var(--cyan)" onClick={send} style={{width:"100%",textAlign:"center"}}>Send Email 📨</Btn>
-      </Card>
-    </div>
-  );
-}
-
-function Pages({ user, page, employees, setEmployees, leaves, setLeaves, payroll, setPayroll }) {
-  if (user.role==="ADMIN") {
-    if (page==="dashboard") return <AdminDash employees={employees} leaves={leaves} payroll={payroll}/>;
-    if (page==="hrmonitor") return <HRMonitorPage/>;
-    if (page==="revenue")   return <RevenuePage/>;
-    if (page==="comms")     return <CommsPage/>;
-  }
-  if (user.role==="HR") {
-    if (page==="dashboard") return <HRDash employees={employees} leaves={leaves} payroll={payroll}/>;
-    if (page==="employees") return <EmployeesPage employees={employees} setEmployees={setEmployees}/>;
-    if (page==="leaves")    return <LeavesPage leaves={leaves} setLeaves={setLeaves}/>;
-    if (page==="payroll")   return <PayrollPage employees={employees} payroll={payroll} setPayroll={setPayroll}/>;
-  }
-  if (user.role==="EMPLOYEE") {
-    if (page==="dashboard") return <EmpDash user={user} leaves={leaves} payroll={payroll}/>;
-    if (page==="myleave")   return <MyLeavePage user={user} leaves={leaves} setLeaves={setLeaves}/>;
-    if (page==="mypayroll") return <MyPayrollPage payroll={payroll}/>;
-    if (page==="profile")   return <ProfilePage user={user}/>;
-  }
-  return null;
-}
-
-function Login({ onLogin }) {
-  const [username,setUsername]=useState("");
-  const [pass,setPass]=useState("");
-  const [show,setShow]=useState(false);
-  const [err,setErr]=useState("");
-  const [loading,setLoading]=useState(false);
-  const [ready,setReady]=useState(false);
-  useEffect(()=>{setTimeout(()=>setReady(true),120);},[]);
-
-  const submit=(e)=>{
-    if(e&&e.preventDefault) e.preventDefault();
-    setErr(""); setLoading(true);
-    setTimeout(()=>{
-      const found=USERS.find(u=>u.username===username&&u.password===pass);
-      if(found){
-        onLogin({id:found.id,name:found.name,email:found.username,role:found.role,avatar:found.name.split(" ").map(n=>n[0]).join("").slice(0,2).toUpperCase()});
-      } else {
-        setErr("Invalid username or password."); setLoading(false);
+        <button onClick={generate} disabled={loading} className="glass-button" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 10, fontSize: 12, color: '#00FFF7', cursor: 'pointer' }}>
+          {loading ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Bot size={12} />}
+          {loading ? 'Generating...' : 'Generate'}
+        </button>
+      </div>
+      {summary
+        ? <p style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.7, whiteSpace: 'pre-line', margin: 0 }}>{summary}</p>
+        : <p style={{ fontSize: 12, color: '#6b7280', fontStyle: 'italic', margin: 0 }}>Click Generate to get an AI-powered summary of your dashboard.</p>
       }
-    },600);
+    </div>
+  );
+};
+
+// ── AI Leave Decision ──────────────────────────────────────────────────────────
+const AILeaveDecision = ({ request }) => {
+  const [decision, setDecision] = useState('');
+  const { ask, loading } = useAI();
+
+  const analyze = async () => {
+    const res = await ask(
+      'You are an HR AI assistant. Give a 1-sentence recommendation (approve/flag) with a brief reason. Be direct.',
+      `Employee: ${request.employee}, Leave: ${request.type}, Date: ${request.date}, Status: ${request.status}. Should this be approved?`
+    );
+    setDecision(res);
+  };
+
+  return decision
+    ? <p style={{ fontSize: 11, color: '#67e8f9', fontStyle: 'italic', marginTop: 4 }}>{decision}</p>
+    : <button onClick={analyze} disabled={loading} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#00FFF7', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, padding: 0 }}>
+        {loading ? <Loader size={10} style={{ animation: 'spin 1s linear infinite' }} /> : <Bot size={10} />}
+        {loading ? 'Analyzing...' : 'AI Analyze'}
+      </button>;
+};
+
+// ── Stat Card ──────────────────────────────────────────────────────────────────
+const StatCard = ({ icon, label, value, trend }) => (
+  <div className="glass-effect rounded-2xl p-5 card-hover glow-cyan" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ color: '#00FFF7' }}>{icon}</div>
+      <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'rgba(0,255,247,0.12)', color: '#00FFF7' }}>{trend}</span>
+    </div>
+    <p style={{ fontSize: 22, fontWeight: 700, color: 'white', margin: 0 }}>{value}</p>
+    <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>{label}</p>
+  </div>
+);
+
+// ── Dashboard Components ───────────────────────────────────────────────────────
+const AdminDashboard = () => (
+  <div className="space-y-6">
+    <AISmartSummary userRole="admin" />
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <StatCard icon={<DollarSign size={24} />} label="Total Revenue" value="$2.4M" trend="+12%" />
+      <StatCard icon={<Users size={24} />} label="Employees" value="145" trend="+5%" />
+      <StatCard icon={<TrendingUp size={24} />} label="Growth" value="23.5%" trend="+8%" />
+      <StatCard icon={<Bell size={24} />} label="Notifications" value="12" trend="Active" />
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2 glass-effect rounded-2xl p-6 card-hover glow-cyan">
+        <h3 className="text-lg font-semibold mb-4">Revenue Analytics</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={revenueData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+            <XAxis dataKey="month" stroke="rgba(255,255,255,0.5)" />
+            <YAxis stroke="rgba(255,255,255,0.5)" />
+            <Tooltip contentStyle={{ background: 'rgba(0,0,0,0.8)', border: '1px solid #00FFF7', borderRadius: 8 }} />
+            <Legend />
+            <Bar dataKey="revenue" fill="#00FFF7" radius={[8, 8, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="glass-effect rounded-2xl p-6 card-hover glow-purple">
+        <h3 className="text-lg font-semibold mb-4">Performance</h3>
+        <div className="space-y-3">
+          {performanceData.map((item, idx) => (
+            <div key={idx}>
+              <div className="flex justify-between text-sm mb-1">
+                <span>{item.name}</span><span className="text-cyan-400">{item.value}%</span>
+              </div>
+              <div className="w-full bg-white/10 rounded-full h-2">
+                <div className="bg-gradient-to-r from-cyan-400 to-purple-500 h-2 rounded-full" style={{ width: `${item.value}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+    <div className="glass-effect rounded-2xl p-6 card-hover">
+      <h3 className="text-lg font-semibold mb-4">HR Activity Tracker</h3>
+      <div className="space-y-3">
+        {notificationsData.map((n, idx) => (
+          <div key={idx} className="flex items-start justify-between p-3 rounded-lg hover:bg-white/5">
+            <div>
+              <p className="font-medium text-sm">{n.title}</p>
+              <p className="text-xs text-gray-400">{n.message}</p>
+            </div>
+            <span className="text-xs text-gray-500">{n.time}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+const HRDashboard = () => {
+  const [showAddEmployee, setShowAddEmployee] = useState(false);
+  const [employees, setEmployees] = useState(employeeListData);
+  const [leaves, setLeaves] = useState(leaveRequests);
+  const [form, setForm] = useState({ name: '', email: '', position: '', department: '' });
+  const [salaryMsg, setSalaryMsg] = useState('');
+  const { ask, loading } = useAI();
+
+  const addEmployee = () => {
+    if (!form.name || !form.position) return;
+    setEmployees(e => [...e, { id: Date.now(), ...form, status: 'Active' }]);
+    setForm({ name: '', email: '', position: '', department: '' });
+    setShowAddEmployee(false);
+  };
+
+  const updateLeave = (id, status) => setLeaves(l => l.map(r => r.id === id ? { ...r, status } : r));
+
+  const processPayroll = async () => {
+    const res = await ask(
+      'You are a payroll AI. Write a professional 2-sentence payroll confirmation.',
+      `Process payroll for 145 employees. Total: $245,000. Pending: $10,000. Date: ${new Date().toDateString()}.`
+    );
+    setSalaryMsg(res);
   };
 
   return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:24,position:"relative"}}>
-      <BG/>
-      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:400,opacity:ready?1:0,transform:ready?"translateY(0)":"translateY(28px)",transition:"all 0.7s cubic-bezier(0.16,1,0.3,1)"}}>
-        <div style={{textAlign:"center",marginBottom:28}}>
-          <div style={{width:62,height:62,borderRadius:16,background:"linear-gradient(135deg,var(--cyan),rgba(0,245,212,0.55))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,margin:"0 auto 14px",boxShadow:"0 0 36px rgba(0,245,212,0.4)"}}>⬡</div>
-          <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:22,color:"#fff",letterSpacing:"4px"}}>INDUSTRIA<span style={{color:"var(--cyan)"}}>OS</span></div>
-          <div style={{fontSize:10,color:"var(--mute)",letterSpacing:"3.5px",marginTop:5,textTransform:"uppercase"}}>Business Management Platform</div>
-        </div>
-        <Card glow="var(--cyan)" style={{padding:"30px 28px"}}>
-          <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:17,color:"#fff",marginBottom:3}}>Welcome Back</div>
-          <div style={{fontSize:12,color:"var(--mute)",marginBottom:22}}>Sign in to access your dashboard</div>
-          <form onSubmit={submit} style={{display:"flex",flexDirection:"column",gap:16}}>
-            <div>
-              <div style={{fontSize:10,color:"var(--mute)",letterSpacing:"1.4px",textTransform:"uppercase",marginBottom:6}}>Username</div>
-              <div style={{position:"relative"}}>
-                <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:15,opacity:0.4}}>👤</span>
-                <input type="text" placeholder="Enter your username" value={username} onChange={e=>{setUsername(e.target.value);setErr("");}}
-                  style={{width:"100%",padding:"11px 13px 11px 38px",borderRadius:11,fontSize:13}}/>
-              </div>
-            </div>
-            <div>
-              <div style={{fontSize:10,color:"var(--mute)",letterSpacing:"1.4px",textTransform:"uppercase",marginBottom:6}}>Password</div>
-              <div style={{position:"relative"}}>
-                <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:15,opacity:0.4}}>🔒</span>
-                <input type={show?"text":"password"} placeholder="Enter your password" value={pass} onChange={e=>{setPass(e.target.value);setErr("");}}
-                  style={{width:"100%",padding:"11px 38px 11px 38px",borderRadius:11,fontSize:13}}/>
-                <button type="button" onClick={()=>setShow(p=>!p)} style={{position:"absolute",right:11,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--mute)",fontSize:14,cursor:"pointer"}}>{show?"🙈":"👁"}</button>
-              </div>
-            </div>
-            {err&&<div style={{background:"rgba(255,68,68,0.08)",border:"1px solid rgba(255,68,68,0.22)",borderRadius:10,padding:"10px 13px",color:"#ff8888",fontSize:12}}>⚠ {err}</div>}
-            <button type="submit" disabled={loading} style={{padding:"13px",borderRadius:11,background:"linear-gradient(135deg,rgba(0,245,212,0.22),rgba(0,245,212,0.06))",border:"1px solid rgba(0,245,212,0.38)",color:"var(--cyan)",fontSize:14,fontWeight:800,fontFamily:"'Syne',sans-serif",letterSpacing:"2px",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all 0.2s"}}>
-              {loading?<Spinner size={16}/>:"SIGN IN →"}
-            </button>
-          </form>
-        </Card>
-        <p style={{textAlign:"center",fontSize:9,color:"rgba(255,255,255,0.15)",marginTop:18,letterSpacing:"1.5px"}}>INDUSTRIAOS v1.0 · © 2026 · SECURED</p>
+    <div className="space-y-6">
+      <AISmartSummary userRole="hr" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <StatCard icon={<Users size={24} />} label="Total Employees" value={employees.length} trend="+3%" />
+        <StatCard icon={<Calendar size={24} />} label="Pending Leaves" value={leaves.filter(l => l.status === 'Pending').length} trend="Review" />
+        <StatCard icon={<DollarSign size={24} />} label="Salary Processed" value="98%" trend="On Time" />
+        <StatCard icon={<TrendingUp size={24} />} label="Attendance" value="94.2%" trend="+2%" />
       </div>
-    </div>
-  );
-}
 
-export default function App() {
-  const [user,setUser]=useState(null);
-  const [page,setPage]=useState("dashboard");
-  const [employees,setEmployees]=useState(INIT_EMPLOYEES);
-  const [leaves,setLeaves]=useState(INIT_LEAVES);
-  const [payroll,setPayroll]=useState(INIT_PAYROLL);
-  const logout=()=>{setUser(null);setPage("dashboard");};
+      <div className="glass-effect rounded-2xl p-6 card-hover">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-semibold">Employee List</h3>
+          <button onClick={() => setShowAddEmployee(!showAddEmployee)} className="glass-button px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-cyan-500/10">
+            <Plus size={18} /><span>Add Employee</span>
+          </button>
+        </div>
+        {showAddEmployee && (
+          <div className="mb-6 p-4 bg-white/5 rounded-lg border border-cyan-500/30">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {['name','email','position','department'].map(f => (
+                <input key={f} type="text" placeholder={f.charAt(0).toUpperCase()+f.slice(1)} value={form[f]}
+                  onChange={e => setForm(p => ({ ...p, [f]: e.target.value }))}
+                  className="glass-input px-4 py-2 rounded-lg" />
+              ))}
+              <button onClick={addEmployee} className="md:col-span-2 bg-gradient-to-r from-cyan-400 to-purple-500 px-4 py-2 rounded-lg font-medium hover:shadow-lg hover:shadow-cyan-400/50">
+                Add Employee
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10">
+                {['Name','Position','Department','Status'].map(h => <th key={h} className="text-left py-3 px-4">{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {employees.map((emp, idx) => (
+                <tr key={idx} className="border-b border-white/5 hover:bg-white/5">
+                  <td className="py-3 px-4">{emp.name}</td>
+                  <td className="py-3 px-4 text-gray-400">{emp.position}</td>
+                  <td className="py-3 px-4 text-gray-400">{emp.department}</td>
+                  <td className="py-3 px-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${emp.status === 'Active' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{emp.status}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-  if(!user) return(<><style>{G}</style><BG/><Login onLogin={u=>{setUser(u);setPage("dashboard");}}/></>);
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="glass-effect rounded-2xl p-6 card-hover">
+          <h3 className="text-lg font-semibold mb-4">Leave Approvals</h3>
+          <div className="space-y-3">
+            {leaves.map((req) => (
+              <div key={req.id} className="p-3 rounded-lg hover:bg-white/5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium text-sm">{req.employee}</p>
+                    <p className="text-xs text-gray-400">{req.type} - {req.date}</p>
+                    <AILeaveDecision request={req} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${req.status === 'Pending' ? 'bg-blue-500/20 text-blue-400' : req.status === 'Approved' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{req.status}</span>
+                    {req.status === 'Pending' && (
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button onClick={() => updateLeave(req.id, 'Approved')} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: 'rgba(34,197,94,0.2)', color: '#4ade80', border: 'none', cursor: 'pointer' }}>✓ Approve</button>
+                        <button onClick={() => updateLeave(req.id, 'Rejected')} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: 'rgba(239,68,68,0.2)', color: '#f87171', border: 'none', cursor: 'pointer' }}>✕ Reject</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-  return (
-    <>
-      <style>{G}</style>
-      <div style={{display:"flex",height:"100vh",overflow:"hidden",position:"relative"}}>
-        <BG/>
-        <Sidebar user={user} page={page} setPage={setPage} onLogout={logout}/>
-        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",zIndex:1}}>
-          <Topbar user={user} page={page}/>
-          <div style={{flex:1,overflowY:"auto"}}>
-            <Pages user={user} page={page} employees={employees} setEmployees={setEmployees} leaves={leaves} setLeaves={setLeaves} payroll={payroll} setPayroll={setPayroll}/>
+        <div className="glass-effect rounded-2xl p-6 card-hover">
+          <h3 className="text-lg font-semibold mb-4">Salary Credits</h3>
+          <div className="space-y-4">
+            <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-lg border border-cyan-500/30">
+              <p className="text-sm text-gray-300 mb-2">Process Salary with AI</p>
+              <button onClick={processPayroll} disabled={loading} className="w-full bg-gradient-to-r from-cyan-400 to-purple-500 px-4 py-2 rounded-lg font-medium hover:shadow-lg hover:shadow-cyan-400/50 flex items-center justify-center gap-2" style={{ cursor: 'pointer', border: 'none' }}>
+                {loading ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Bot size={16} />}
+                {loading ? 'Processing...' : 'Process All with AI'}
+              </button>
+              {salaryMsg && <p style={{ fontSize: 12, color: '#86efac', marginTop: 10, lineHeight: 1.6 }}>{salaryMsg}</p>}
+            </div>
+            <div className="text-sm space-y-2">
+              <div className="flex justify-between"><span className="text-gray-400">Total Salary Pool</span><span className="text-cyan-400 font-medium">$245,000</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Processed</span><span className="text-green-400 font-medium">$235,000</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Pending</span><span className="text-yellow-400 font-medium">$10,000</span></div>
+            </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
+  );
+};
+
+const EmployeeDashboard = () => {
+  const [leaveForm, setLeaveForm] = useState({ type: 'Sick Leave', startDate: '', endDate: '', reason: '' });
+  const [leaveStatus, setLeaveStatus] = useState('');
+  const { ask, loading } = useAI();
+
+  const submitLeave = async () => {
+    if (!leaveForm.startDate || !leaveForm.endDate) return;
+    const res = await ask(
+      'You are an HR AI. Respond to a leave submission with a friendly 2-sentence confirmation.',
+      `Leave: ${leaveForm.type}, From: ${leaveForm.startDate}, To: ${leaveForm.endDate}, Reason: ${leaveForm.reason || 'Not provided'}.`
+    );
+    setLeaveStatus(res);
+  };
+
+  return (
+    <div className="space-y-6">
+      <AISmartSummary userRole="employee" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <StatCard icon={<Calendar size={24} />} label="Leave Balance" value="12 days" trend="Available" />
+        <StatCard icon={<DollarSign size={24} />} label="Next Payslip" value="Mar 31" trend="On Track" />
+        <StatCard icon={<TrendingUp size={24} />} label="Attendance" value="96%" trend="This Month" />
+        <StatCard icon={<Users size={24} />} label="Team Size" value="8" trend="Active" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="glass-effect rounded-2xl p-6 card-hover">
+          <h3 className="text-lg font-semibold mb-4">Request Leave</h3>
+          <div className="space-y-3">
+            <select value={leaveForm.type} onChange={e => setLeaveForm(p => ({ ...p, type: e.target.value }))} className="glass-input w-full px-4 py-2 rounded-lg">
+              {['Sick Leave','Vacation','Personal','Emergency'].map(t => <option key={t} value={t} style={{ background: '#1e293b' }}>{t}</option>)}
+            </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="text-xs text-gray-400 mb-1 block">Start Date</label>
+                <input type="date" value={leaveForm.startDate} onChange={e => setLeaveForm(p => ({ ...p, startDate: e.target.value }))} className="glass-input w-full px-3 py-2 rounded-lg text-sm" /></div>
+              <div><label className="text-xs text-gray-400 mb-1 block">End Date</label>
+                <input type="date" value={leaveForm.endDate} onChange={e => setLeaveForm(p => ({ ...p, endDate: e.target.value }))} className="glass-input w-full px-3 py-2 rounded-lg text-sm" /></div>
+            </div>
+            <textarea value={leaveForm.reason} onChange={e => setLeaveForm(p => ({ ...p, reason: e.target.value }))}
+              placeholder="Reason (optional)" rows={3} className="glass-input w-full px-4 py-2 rounded-lg resize-none" />
+            <button onClick={submitLeave} disabled={loading} className="w-full bg-gradient-to-r from-cyan-400 to-purple-500 px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2" style={{ cursor: 'pointer', border: 'none' }}>
+              {loading ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={16} />}
+              {loading ? 'Submitting...' : 'Submit Request'}
+            </button>
+            {leaveStatus && <p style={{ fontSize: 12, color: '#67e8f9', lineHeight: 1.6 }}>{leaveStatus}</p>}
+          </div>
+        </div>
+
+        <div className="glass-effect rounded-2xl p-6 card-hover">
+          <h3 className="text-lg font-semibold mb-4">My Payslips</h3>
+          <div className="space-y-3">
+            {[['February 2026','$7,333','Paid'],['January 2026','$7,333','Paid'],['December 2025','$7,333','Paid']].map(([month, amt, status]) => (
+              <div key={month} className="flex items-center justify-between p-3 rounded-lg hover:bg-white/5">
+                <span className="text-sm">{month}</span>
+                <span className="text-cyan-400 font-medium text-sm">{amt}</span>
+                <span className="px-3 py-1 rounded-full text-xs bg-green-500/20 text-green-400">{status}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Sidebar ────────────────────────────────────────────────────────────────────
+const Sidebar = ({ sidebarOpen, setSidebarOpen, userRole }) => {
+  const menuItems = {
+    admin: [['📊','Dashboard'],['📈','Analytics'],['📦','Stock'],['👥','HR Activity'],['⚙️','Settings']],
+    hr: [['📊','Dashboard'],['👥','Employees'],['📅','Leave Requests'],['💰','Salary'],['📋','Reports']],
+    employee: [['📊','Dashboard'],['👤','Profile'],['📅','Leave Request'],['💰','Salary'],['📄','Documents']]
+  };
+  return (
+    <div className={`glass-effect ${sidebarOpen ? 'w-64' : 'w-20'} transition-all duration-300 border-r border-cyan-500/20 flex flex-col`}>
+      <div className="p-6 flex items-center justify-between">
+        {sidebarOpen && <h2 className="text-xl font-bold neon-glow">NEXUS</h2>}
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-white/10 rounded-lg"><Menu size={20} /></button>
+      </div>
+      <nav className="flex-1 px-4 space-y-2">
+        {menuItems[userRole]?.map(([icon, label], idx) => (
+          <button key={idx} className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg glass-button hover:bg-cyan-500/10 group">
+            <span className="text-xl">{icon}</span>
+            {sidebarOpen && <span className="text-sm group-hover:text-cyan-400">{label}</span>}
+          </button>
+        ))}
+      </nav>
+      {sidebarOpen && <div className="p-4 border-t border-white/10 text-xs text-gray-400">© 2026 NEXUS</div>}
+    </div>
+  );
+};
+
+// ── Top Navbar ─────────────────────────────────────────────────────────────────
+const TopNavbar = ({ userRole, onLogout, onAIOpen }) => (
+  <div className="glass-effect border-b border-cyan-500/20 px-6 py-4 flex items-center justify-between">
+    <h1 className="text-2xl font-bold neon-glow capitalize">{userRole} Dashboard</h1>
+    <div className="flex items-center space-x-4">
+      <div className="relative hidden md:block">
+        <Search size={18} className="absolute left-3 top-3 text-gray-400" />
+        <input type="text" placeholder="Search..." className="glass-input pl-10 pr-4 py-2 rounded-lg w-48" />
+      </div>
+      <button onClick={onAIOpen} className="glass-button flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-cyan-500/10" style={{ color: '#00FFF7', border: '1px solid rgba(0,255,247,0.3)' }}>
+        <Bot size={18} /><span className="hidden sm:inline text-sm">AI Chat</span>
+      </button>
+      <button className="relative p-2 hover:bg-white/10 rounded-lg">
+        <Bell size={20} />
+        <span className="absolute top-1 right-1 w-2 h-2 bg-cyan-400 rounded-full glow-cyan" />
+      </button>
+      <button onClick={onLogout} className="flex items-center space-x-2 px-4 py-2 glass-button rounded-lg hover:text-cyan-400">
+        <LogOut size={18} /><span className="hidden sm:inline">Logout</span>
+      </button>
+    </div>
+  </div>
+);
+
+// ── Login ──────────────────────────────────────────────────────────────────────
+const LoginPage = ({ selectedRole, setSelectedRole, onLogin, username, setUsername, password, setPassword, showPassword, setShowPassword }) => (
+  <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950 flex items-center justify-center p-4 relative overflow-hidden">
+    <style>{`
+      .glass-card { background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+      .glass-input { background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); color: white; }
+      .glass-input::placeholder { color: rgba(255,255,255,0.5); }
+      .glass-input:focus { outline: none; border-color: rgba(0,255,247,0.5); box-shadow: 0 0 15px rgba(0,255,247,0.2); }
+      .glow-button { background: linear-gradient(135deg,#00FFF7 0%,#0099cc 100%); box-shadow: 0 0 20px rgba(0,255,247,0.5); transition: all 0.3s ease; cursor: pointer; border: none; }
+      .glow-button:hover { box-shadow: 0 0 30px rgba(0,255,247,0.8); transform: translateY(-2px); }
+      .role-card { background: rgba(255,255,255,0.06); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.3s ease; }
+      .role-card.active { border-color: #00FFF7; background: rgba(0,255,247,0.15); box-shadow: 0 0 20px rgba(0,255,247,0.3); }
+    `}</style>
+    <div className="absolute top-0 left-0 w-96 h-96 bg-cyan-500 opacity-10 rounded-full blur-3xl" />
+    <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-500 opacity-10 rounded-full blur-3xl" />
+    <div className="glass-card rounded-3xl p-12 w-full max-w-md relative z-10 shadow-2xl">
+      <h1 className="text-4xl font-bold text-center mb-2" style={{ textShadow: '0 0 10px rgba(0,255,247,0.6)', color: 'white' }}>Access Portal</h1>
+      <p className="text-center text-gray-300 mb-8">Role-Based Business Management</p>
+      <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium mb-2 text-gray-200">Username</label>
+          <input type="text" placeholder="Enter your username" value={username} onChange={e => setUsername(e.target.value)} className="glass-input w-full px-4 py-3 rounded-xl" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-2 text-gray-200">Password</label>
+          <div className="relative">
+            <input type={showPassword ? 'text' : 'password'} placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} className="glass-input w-full px-4 py-3 rounded-xl pr-12" />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ background: 'none', border: 'none', cursor: 'pointer' }} className="absolute right-3 top-3.5 text-gray-400 hover:text-cyan-400">
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-3 text-gray-200">Select Role</label>
+          <div className="grid grid-cols-3 gap-3">
+            {['admin','hr','employee'].map(role => (
+              <button key={role} type="button" onClick={() => setSelectedRole(role)} className={`role-card rounded-xl p-4 text-center text-sm font-medium capitalize ${selectedRole === role ? 'active' : ''}`} style={{ color: selectedRole === role ? '#00FFF7' : '#9ca3af' }}>
+                {role}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button onClick={onLogin} className="glow-button w-full py-3 rounded-xl font-semibold text-slate-900 uppercase tracking-wider">Login</button>
+      </div>
+      <p className="text-center text-gray-400 text-xs mt-6">Demo: Use any username & password</p>
+    </div>
+  </div>
+);
+
+// ── App Root ───────────────────────────────────────────────────────────────────
+export default function Dashboard() {
+  const [authenticated, setAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState('');
+  const [selectedRole, setSelectedRole] = useState('admin');
+  const [showPassword, setShowPassword] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [aiOpen, setAiOpen] = useState(false);
+
+  const handleLogin = (e) => {
+    if (e?.preventDefault) e.preventDefault();
+    if (username && password) { setAuthenticated(true); setUserRole(selectedRole); }
+  };
+
+  const handleLogout = () => { setAuthenticated(false); setUserRole(''); setUsername(''); setPassword(''); setAiOpen(false); };
+
+  if (!authenticated) {
+    return <LoginPage selectedRole={selectedRole} setSelectedRole={setSelectedRole} onLogin={handleLogin}
+      username={username} setUsername={setUsername} password={password} setPassword={setPassword}
+      showPassword={showPassword} setShowPassword={setShowPassword} />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950 text-white overflow-hidden">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        * { font-family: 'Roboto', sans-serif; }
+        .glass-effect { background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .glass-button { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s ease; cursor: pointer; }
+        .glass-button:hover { background: rgba(0,255,247,0.15); border-color: rgba(0,255,247,0.5); box-shadow: 0 0 20px rgba(0,255,247,0.3); }
+        .glass-input { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: white; }
+        .glass-input::placeholder { color: rgba(255,255,255,0.5); }
+        .glass-input:focus { outline: none; border-color: rgba(0,255,247,0.5); box-shadow: 0 0 15px rgba(0,255,247,0.2); }
+        .neon-glow { text-shadow: 0 0 10px rgba(0,255,247,0.6), 0 0 20px rgba(0,255,247,0.4); }
+        .glow-cyan { box-shadow: 0 0 20px rgba(0,255,247,0.3), inset 0 0 20px rgba(0,255,247,0.1); }
+        .glow-purple { box-shadow: 0 0 20px rgba(155,89,182,0.3), inset 0 0 20px rgba(155,89,182,0.1); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-5px); }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(1.5);} }
+        @keyframes spin { from{transform:rotate(0deg);}to{transform:rotate(360deg);} }
+        @keyframes bounce { 0%,80%,100%{transform:translateY(0);}40%{transform:translateY(-8px);} }
+      `}</style>
+      <div className="flex h-screen">
+        <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} userRole={userRole} />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <TopNavbar userRole={userRole} onLogout={handleLogout} onAIOpen={() => setAiOpen(true)} />
+          <main className="flex-1 overflow-auto p-6">
+            {userRole === 'admin' && <AdminDashboard />}
+            {userRole === 'hr' && <HRDashboard />}
+            {userRole === 'employee' && <EmployeeDashboard />}
+          </main>
+        </div>
+      </div>
+      {aiOpen && <AIChatPanel userRole={userRole} onClose={() => setAiOpen(false)} />}
+    </div>
   );
 }
